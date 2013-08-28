@@ -1,0 +1,7 @@
+term = ~"[A-Z0-9]*"i
+
+quoted_term = quote ( space / term )* quote
+
+quote = ( '"' / "'" )
+
+space = ~"\s+"
