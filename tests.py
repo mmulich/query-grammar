@@ -133,7 +133,7 @@ class QueryPEGTestCase(unittest.TestCase):
     def test_query_matching(self):
         gram = self.grammar
 
-        # Combined expression matching
+        # Combined expressions matching
         field_value = 'book'
         text_values = ['organic', ' ', 'chemistry', ' ',
                        'type:{}'.format(field_value)]
@@ -143,7 +143,9 @@ class QueryPEGTestCase(unittest.TestCase):
             Node('query', text, 0, 27, children=[
                 Node('', text, 0, 7, children=[
                     Node('expression', text, 0, 7, children=[
-                        RegexNode('term', text, 0, 7),
+                        Node('', text, 0, 7, children=[
+                            RegexNode('term', text, 0, 7),
+                            ])
                         ]),
                     ]),
                 Node('', text, 7, 8, children=[
@@ -151,7 +153,9 @@ class QueryPEGTestCase(unittest.TestCase):
                     ]),
                 Node('', text, 8, 17, children=[
                     Node('expression', text, 8, 17, children=[
-                         RegexNode('term', text, 8, 17),
+                         Node('', text, 8, 17, children=[
+                             RegexNode('term', text, 8, 17),
+                             ])
                          ]),
                     ]),
                 Node('', text, 17, 18, children=[
@@ -179,3 +183,63 @@ class QueryPEGTestCase(unittest.TestCase):
         self.assertEqual(
             node_tree.children[4].children[0].children[0].children[2].text,
                          field_value)
+
+        # Combined expressions with quoted terms matching
+        field_value = 'book'
+        text_values = ['"organic chemistry"', ' ',
+                       'type:{}'.format(field_value)]
+        text = ''.join(text_values)
+        node_tree = gram['query'].parse(text)
+        expected_node_tree = \
+            Node('query', text, 0, 29, children=[
+                Node('', text, 0, 19, children=[
+                    Node('expression', text, 0, 19, children=[
+                        Node('', text, 0, 19, children=[
+                            Node('quoted_term', text, 0, 19, children=[
+                                Node('quote', text, 0, 1, children=[
+                                    Node('', text, 0, 1),
+                                    ]),
+                                Node('', text, 1, 18, children=[
+                                    Node('', text, 1, 8, children=[
+                                        RegexNode('term', text, 1, 8),
+                                        ]),
+                                    Node('', text, 8, 9, children=[
+                                        RegexNode('space', text, 8, 9),
+                                        ]),
+                                    Node('', text, 9, 18, children=[
+                                        RegexNode('term', text, 9, 18),
+                                        ]),
+                                    ]),
+                                Node('quote', text, 18, 19, children=[
+                                    Node('', text, 18, 19),
+                                    ]),
+                                ]),
+                            ]),
+                        ]),
+                    ]),
+                Node('', text, 19, 20, children=[
+                    RegexNode('space', text, 19, 20),
+                    ]),
+                Node('', text, 20, 29, children=[
+                    Node('expression', text, 20, 29, children=[
+                        Node('field', text, 20, 29, children=[
+                            RegexNode('field_name', text, 20, 24),
+                            Node('', text, 24, 25),
+                            Node('', text, 25, 29, children=[
+                                RegexNode('term', text, 25, 29),
+                                ]),
+                            ]),
+                        ]),
+                    ]),
+                ])
+        self.assertEqual(node_tree,
+                         expected_node_tree,
+                         node_tree)
+        # Match 'organic chemistry'
+        self.assertEqual(
+            node_tree.children[0].children[0].children[0].children[0].children[1].text,
+            text_values[0][1:len(text_values[0])-1])
+        # Match 'book'
+        self.assertEqual(
+            node_tree.children[2].children[0].children[0].children[2].text,
+            field_value)

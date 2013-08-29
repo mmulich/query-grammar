@@ -1,6 +1,6 @@
 query = ( space / expression )*
 
-expression = field / term
+expression = field / ( quoted_term / term )
 
 
 field = field_name ":" ( quoted_term / term )
