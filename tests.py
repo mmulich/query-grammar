@@ -129,3 +129,53 @@ class QueryPEGTestCase(unittest.TestCase):
                          node_tree)
         self.assertEqual(node_tree.children[2].children[0].children[1].text,
                          value)
+
+    def test_query_matching(self):
+        gram = self.grammar
+
+        # Combined expression matching
+        field_value = 'book'
+        text_values = ['organic', ' ', 'chemistry', ' ',
+                       'type:{}'.format(field_value)]
+        text = ''.join(text_values)
+        node_tree = gram['query'].parse(text)
+        expected_node_tree = \
+            Node('query', text, 0, 27, children=[
+                Node('', text, 0, 7, children=[
+                    Node('expression', text, 0, 7, children=[
+                        RegexNode('term', text, 0, 7),
+                        ]),
+                    ]),
+                Node('', text, 7, 8, children=[
+                    RegexNode('space', text, 7, 8),
+                    ]),
+                Node('', text, 8, 17, children=[
+                    Node('expression', text, 8, 17, children=[
+                         RegexNode('term', text, 8, 17),
+                         ]),
+                    ]),
+                Node('', text, 17, 18, children=[
+                    RegexNode('space', text, 17, 18),
+                    ]),
+                Node('', text, 18, 27, children=[
+                    Node('expression', text, 18, 27, children=[
+                        Node('field', text, 18, 27, children=[
+                            RegexNode('field_name', text, 18, 22),
+                            Node('', text, 22, 23),
+                            Node('', text, 23, 27, children=[
+                                RegexNode('term', text, 23, 27),
+                                ]),
+                            ]),
+                        ]),
+                    ]),
+                ])
+        self.assertEqual(node_tree,
+                         expected_node_tree,
+                         node_tree)
+        self.assertEqual(node_tree.children[0].children[0].text,
+                         text_values[0])  # 'organic'
+        self.assertEqual(node_tree.children[2].children[0].text,
+                         text_values[2])  # 'chemistry'
+        self.assertEqual(
+            node_tree.children[4].children[0].children[0].children[2].text,
+                         field_value)
