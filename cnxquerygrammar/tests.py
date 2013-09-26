@@ -240,3 +240,40 @@ class QueryPEGTestCase(unittest.TestCase):
         self.assertEqual(
             node_tree.children[2].children[0].children[0].children[2].text,
             field_value)
+
+    def test_utf8_term(self):
+        gram = self.grammar
+
+        text = u'你好'
+        node_tree = gram['term'].parse(text)
+        self.assertEqual(node_tree,
+                RegexNode('term', text, 0, len(text)))
+        self.assertEqual(node_tree.match.group(), text)
+
+    def test_punctuations(self):
+        gram = self.grammar
+
+        text = '"hello, name!"'
+        node_tree = gram['quoted_term'].parse(text)
+
+        expected_tree = Node('quoted_term', text, 0, len(text), children=[
+            # "
+            Node('quote', text, 0, 1),
+            Node('', text, 1, 13, children=[
+                # hello,
+                Node('', text, 1, 7, children=[
+                    RegexNode('term', text, 1, 7),
+                    ]),
+                # (space)
+                Node('', text, 7, 8, children=[
+                    RegexNode('space', text, 7, 8),
+                    ]),
+                # name!
+                Node('', text, 8, 13, children=[
+                    RegexNode('term', text, 8, 13),
+                    ]),
+                ]),
+            # "
+            Node('quote', text, 13, 14),
+            ])
+        self.assertEqual(node_tree, expected_tree, node_tree)
